@@ -1,47 +1,59 @@
-# Lottery Data Analysis: Probability & Fairness Evaluation 🎲📊
+# Is the Israeli Lotto Fair? A Statistical Audit of 1,744 Draws 🎲📊
 
-## 📌 Project Overview
-An exploratory data analysis (EDA) and statistical evaluation of historical national lottery draws (1968–2026; the analysis covers the current game format only, from 2011-03-05, 1,744 draws). This project aims to verify the randomness of the draws, analyze number frequency distributions, and calculate real-world win probabilities using statistical hypothesis testing.
+**TL;DR:** I tested 1,744 draws of the current Israeli Lotto format (6 numbers out of 37 + a strong number out of 7; March 2011 – October 2026) against six hypotheses defined before running any test. The draws behave like a fair lottery: no unequal number frequencies, no "hot" or "due" numbers, no memory between draws. The one robust finding is about the players, not the lottery: draws made only of numbers up to 31 ("birthday numbers") have about 1.6× more main-prize winners.
 
-Rather than relying on "lucky numbers," this project applies Python-based data science techniques to evaluate whether the lottery mechanics align with expected mathematical models.
+## 🔍 Key findings
 
-## 🎯 Goals
-- **Data Cleaning & Preprocessing:** Format and standardize years of historical draw data for analysis.
-- **Frequency Analysis:** Identify "hot" and "cold" numbers and evaluate if their variance falls within normal statistical limits.
-- **Probability Modeling:** Calculate the expected value (EV) and mathematical odds of various winning tiers.
-- **Hypothesis Testing:** Apply statistical tests (e.g., Chi-Square) to evaluate the fairness and true randomness of the system.
+| # | Question | Result | p-value (Holm-adjusted) |
+|---|----------|--------|-------------------------|
+| H1 | Are the 37 main numbers equally likely? | No evidence against (counts range 245–315, expected 283) | 1.000 |
+| H2 | Is the strong number (1–7) uniform? | No evidence against | 1.000 |
+| H3 | Are consecutive draws independent? | Borderline before correction (raw p = 0.016), not significant after correction and unstable over time | 0.080 |
+| H4 | Do "hot" numbers stay hot year after year? | No (mean rank correlation between years: −0.002) | 1.000 |
+| H5 | Is a number "due" after a long absence? | No (gaps match the geometric distribution) | 1.000 |
+| H6 | Do birthday-only draws (all numbers ≤ 31) have more winners? | **Yes**: 14.7% of such draws have a winner vs. 10.0% of other draws | **0.0096** |
 
-## 🛠️ Tech Stack
-- **Language:** Python 3
-- **Data Manipulation:** `pandas`, `numpy`
-- **Statistical Analysis:** `scipy.stats`
-- **Data Visualization:** `matplotlib`, `seaborn` (or `plotly` for interactive charts)
-- **Environment:** Jupyter Notebook
+![Summary of all hypothesis tests](reports/figures/summary_pvalues.png)
 
-## 🚀 Next Steps (Development Roadmap)
-- [ ] Initialize repository and set up the virtual environment.
-- [ ] Load and clean the 1968-2026 historical dataset (handle missing values, correct data types).
-- [ ] Perform basic EDA (histograms, scatter plots of drawn numbers).
-- [ ] Run statistical tests on number distributions.
-- [ ] Document findings, create visualizations, and write the final conclusion.
+### The one real effect: players, not the lottery
+Many players pick birthdays, so combinations made only of numbers up to 31 are played more often. Every combination is equally likely to be drawn, but when a birthday-only combination comes up, the prize is split among more people. The effect holds for regular tickets, Double tickets and their sum, and grows steadily with the number of birthday numbers in the draw.
 
-## 🔬 Hypotheses & Analysis Plan
-*Defined before running any tests, to avoid p-hacking.*
+![Share of draws with a winner by number of birthday numbers](reports/figures/h6_birthday_numbers.png)
 
-**Scope:** Israeli Lotto draws in the current format (6 numbers out of 37 + 1 strong number out of 7), from 2011-03-05 to 2026-10-20 (1,744 draws). Earlier draws are excluded because the game rules were different.
+## 🧪 Approach
+- **Hypotheses and α = 0.05 were written in this README before any test was run** (see the Git history). Two additions came after seeing results and are labeled as exploratory in the notebook: the stability check for H3 and the robustness check for H6.
+- **Monte Carlo simulation instead of blind trust in formulas.** Numbers in a draw are drawn without replacement, so the classic chi-square test is only approximate. I simulated 10,000 fair lotteries to get exact reference distributions (for H1 the simulated statistic averages 31.1, not 36 as the textbook distribution assumes).
+- **Multiple-testing correction.** Six tests at α = 0.05 give roughly a 26% chance of at least one false positive in a perfectly fair lottery, so p-values are adjusted with the Holm method.
 
-**Significance level:** α = 0.05. Where many tests are run at once (e.g. one per number), p-values are adjusted for multiple comparisons (Holm / Benjamini-Hochberg).
+![Observed chi-square vs. simulated fair lottery](reports/figures/h1_monte_carlo.png)
 
-| # | Question | Null hypothesis (H0) | Method |
-|---|----------|----------------------|--------|
-| H1 | Are the 6 main numbers uniform? | Each of the 37 numbers is equally likely (6/37 per draw) | Chi-square goodness-of-fit + Monte Carlo simulation |
-| H2 | Is the strong number uniform? | Each value 1–7 is equally likely | Chi-square goodness-of-fit |
-| H3 | Are consecutive draws independent? | Overlap between two consecutive draws follows the hypergeometric distribution | Chi-square on overlap counts |
-| H4 | Do "hot" numbers stay hot? | Number frequencies in one year do not correlate with the next year | Spearman correlation |
-| H5 | Is a number "due" after a long absence? | Gaps between appearances follow a geometric distribution (p = 6/37) | Goodness-of-fit test on gaps |
-| H6 | (Exploratory) Do draws with only "birthday numbers" (≤31) have more winners? | Mean number of winners is the same | Non-parametric test |
+## 🧹 Data
+- **Source:** [Official Mifal HaPais Lotto Archive](https://www.pais.co.il/lotto/archive.aspx), downloaded on 2026-10-23. The raw file covers 4,553 draws from 1968 to 2026.
+- **Cleaning:** the game rules changed several times. The current format (main numbers 1–37, strong number 1–7) starts on 2011-03-05 (draw 2234), which I found by locating the last draw that breaks the current rules. 1,744 draws remain, and all integrity checks pass (valid ranges, six distinct numbers per draw, no duplicate dates, consecutive draw IDs, no missing values).
 
-**Interpretation note:** failing to reject H0 does not prove the lottery is fair. It means no evidence of deviation was found at this sample size.
+## 📁 Repository structure
+├── data/
+│ ├── raw/Lotto.csv # original file, never modified
+│ └── processed/lotto_current_format.csv # cleaned data, current format only
+├── notebooks/
+│ ├── 01_cleaning.ipynb # cleaning and validation
+│ ├── 02_eda.ipynb # frequencies and distributions
+│ └── 03_hypothesis_tests.ipynb # H1–H6, Monte Carlo, Holm correction
+├── reports/figures/ # charts used in this README
+└── requirements.txt
 
----
-*Developed as a portfolio project focusing on applied statistics and Python data manipulation.*
+## ▶️ How to reproduce
+```bash
+python -m venv .venv
+.venv\Scripts\activate          # macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+```
+Then run the notebooks in order (01 → 02 → 03).
+
+## ⚠️ Limitations
+- Failing to reject a null hypothesis does not prove fairness. With 1,744 draws, only moderate or large deviations are detectable.
+- Only about 200 draws have a main-prize winner, so H6 has limited statistical power. Winner counts also depend on ticket sales, which I cannot observe. Because the draw is random, this adds noise but should not bias the comparison.
+- The meaning of the winners columns is based on the file's description and was not verified against the official rules.
+
+## 🛠️ Tech stack
+Python 3 · pandas · NumPy · SciPy · Matplotlib · Jupyter
