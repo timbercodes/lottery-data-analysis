@@ -32,15 +32,20 @@ Many players pick birthdays, so combinations made only of numbers up to 31 are p
 - **Cleaning:** the game rules changed several times. The current format (main numbers 1–37, strong number 1–7) starts on 2011-03-05 (draw 2234), which I found by locating the last draw that breaks the current rules. 1,744 draws remain, and all integrity checks pass (valid ranges, six distinct numbers per draw, no duplicate dates, consecutive draw IDs, no missing values).
 
 ## 📁 Repository structure
+```text
 ├── data/
-│ ├── raw/Lotto.csv # original file, never modified
-│ └── processed/lotto_current_format.csv # cleaned data, current format only
+│   ├── raw/
+│   │   └── Lotto.csv                       # Original file, never modified
+│   └── processed/
+│       └── lotto_current_format.csv        # Cleaned data, current format only
 ├── notebooks/
-│ ├── 01_cleaning.ipynb # cleaning and validation
-│ ├── 02_eda.ipynb # frequencies and distributions
-│ └── 03_hypothesis_tests.ipynb # H1–H6, Monte Carlo, Holm correction
-├── reports/figures/ # charts used in this README
+│   ├── 01_cleaning.ipynb                   # Cleaning and validation
+│   ├── 02_eda.ipynb                        # Frequencies and distributions
+│   └── 03_hypothesis_tests.ipynb           # H1–H6, Monte Carlo, Holm correction
+├── reports/
+│   └── figures/                            # Charts used in this README
 └── requirements.txt
+```
 
 ## ▶️ How to reproduce
 ```bash
